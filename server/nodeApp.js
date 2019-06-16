@@ -39,10 +39,7 @@ const server = http.createServer((request, response) => {
                     response.write(body)
                     response.end()
                 })
-
             }
-
- 
         })
     }
 }).listen(8080)
