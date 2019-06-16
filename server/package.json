@@ -1,0 +1,16 @@
+{
+  "name": "file-ingest-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "nodeApp.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Richard Wheatley",
+  "license": "ISC",
+  "repository": {"git@github.com": "dickyw71/file-ingest-server.git"},
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
