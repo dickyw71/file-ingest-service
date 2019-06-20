@@ -1,7 +1,7 @@
 const http = require('http')
 const fs = require('fs')
 
-const server = http.createServer((request, response) => {
+http.createServer((request, response) => {
     const { method, url, headers } = request
 
     if (method === 'POST' && url === '/files') {
@@ -39,6 +39,14 @@ const server = http.createServer((request, response) => {
                     response.write(body)
                     response.end()
                 })
+            } else if (headers["content-type"].includes('multipart/')) {
+                // parse out each body-part
+                // by splitting the Buffer on with the boundary separator
+                boundaryStrIndex = headers["content-type"].indexOf("boundary=")
+                if (boundaryStrIndex !== -1) {
+                    boundaryStr = headers["content-type"].slice(boundaryStrIndex+10, headers["content-type"].length-1)
+                }
+                response.end()
             }
         })
     }
