@@ -44,7 +44,7 @@ http.createServer((request, response) => {
                 // by splitting the Buffer on with the boundary separator
                 boundaryStrIndex = headers["content-type"].indexOf("boundary=")
                 if (boundaryStrIndex !== -1) {
-                    boundaryStr = headers["content-type"].slice(boundaryStrIndex+10, headers["content-type"].length-1)
+                    const boundaryStr = headers["content-type"].slice(boundaryStrIndex+10, headers["content-type"].length-1)
                 }
                 response.end()
             }
