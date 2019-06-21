@@ -6,12 +6,14 @@ const imageFile = fs.readFileSync("../ingest/profile_pic.jpeg")
 
 const boundaryStr = '----------MyEntityBoundary-1'
 const jsonPartParams = {
-    'content-type': 'application/json',
-    name: 'input.json'
+    'Content-Type': 'application/json',
+    'Content-Length': Buffer.byteLength(jsonFile),
+    'Content-Disposition': `form-data; name="jsonFile"; filename="input.json"`
 }
 const imagePartParams = {
-    'content-type': 'image/jpeg',
-    name: 'profile_pic.jpeg'
+    'Content-Type': 'image/jpeg',
+    'Content-Length': imageFile.length,
+    'Content-Disposition': `form-data; name="imageFile"; filename="profile_pic.jpeg"`
 }
 
 const postDataArray = [
@@ -36,8 +38,8 @@ const options = {
     path: '/files',
     method: 'POST',
     headers: {
-        'content-type': `multipart/mixed; boundary=\"${boundaryStr}\"`,
-        'content-length': postData.length
+        'Content-Type': `multipart/mixed; boundary=\"${boundaryStr}\"`,
+        'Content-Length': postData.length
     }
 }
 
