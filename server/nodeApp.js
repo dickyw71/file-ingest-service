@@ -4,6 +4,12 @@ const fs = require('fs')
 http.createServer((request, response) => {
     const { method, url, headers } = request
 
+    boundaryStrIndex = headers["content-type"].indexOf("boundary=")
+    if (boundaryStrIndex !== -1) {
+        const boundaryStr = headers["content-type"].slice(boundaryStrIndex+10, headers["content-type"].length-1)
+        console.log(boundaryStr)
+    }
+
     if (method === 'POST' && url === '/files') {
         let body = []
         request.on('error', (err) => {
@@ -45,9 +51,22 @@ http.createServer((request, response) => {
                 boundaryStrIndex = headers["content-type"].indexOf("boundary=")
                 if (boundaryStrIndex !== -1) {
                     const boundaryStr = headers["content-type"].slice(boundaryStrIndex+10, headers["content-type"].length-1)
-                }
-                response.end()
+
+                    const buffBody = Buffer.concat(body)
+                    const boundarySlice = buffBody.slice(0, 4+(boundaryStr.length))
+                    const jsonHeaderSlice = buffBody.slice(boundarySlice.length, buffBody.indexOf('\r\n', boundarySlice.length))
+                    const jsonBodySlice = buffBody.slice(jsonHeaderSlice.length+boundarySlice.length+4, buffBody.indexOf(`--${boundaryStr}`, jsonHeaderSlice.length+boundarySlice.length+4))
+                    
+                    console.log(jsonBodySlice.toString())
+
+                    response.setHeader('Content-Type', 'text/utf8');
+                    response.setHeader('X-Powered-By', 'bacon');
+                    response.write(boundarySlice.toString())
+                    response.write(jsonHeaderSlice.toString())
+                    response.write(jsonBodySlice.toString())
+                }            
             }
+            response.end()
         })
     }
 }).listen(8080)
