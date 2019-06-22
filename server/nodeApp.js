@@ -1,14 +1,9 @@
 const http = require('http')
 const fs = require('fs')
+const assert = require('assert').strict
 
 http.createServer((request, response) => {
     const { method, url, headers } = request
-
-    boundaryStrIndex = headers["content-type"].indexOf("boundary=")
-    if (boundaryStrIndex !== -1) {
-        const boundaryStr = headers["content-type"].slice(boundaryStrIndex+10, headers["content-type"].length-1)
-        console.log(boundaryStr)
-    }
 
     if (method === 'POST' && url === '/files') {
         let body = []
@@ -47,23 +42,57 @@ http.createServer((request, response) => {
                 })
             } else if (headers["content-type"].includes('multipart/')) {
                 // parse out each body-part
-                // by splitting the Buffer on with the boundary separator
-                boundaryStrIndex = headers["content-type"].indexOf("boundary=")
-                if (boundaryStrIndex !== -1) {
-                    const boundaryStr = headers["content-type"].slice(boundaryStrIndex+10, headers["content-type"].length-1)
+                // by splitting the Buffer the boundary separator
+                const boundaryField = "boundary=\""
+                const doubleQuote = "\""
+                const boundaryFieldIndex = headers["content-type"].indexOf(boundaryField)
+                if (boundaryFieldIndex !== -1) {
+                    const boundaryStr = headers["content-type"].slice(boundaryFieldIndex + boundaryField.length, headers["content-type"].length - doubleQuote.length)
+                    console.log("Boundary: ", boundaryStr)
 
-                    const buffBody = Buffer.concat(body)
-                    const boundarySlice = buffBody.slice(0, 4+(boundaryStr.length))
-                    const jsonHeaderSlice = buffBody.slice(boundarySlice.length, buffBody.indexOf('\r\n', boundarySlice.length))
-                    const jsonBodySlice = buffBody.slice(jsonHeaderSlice.length+boundarySlice.length+4, buffBody.indexOf(`--${boundaryStr}`, jsonHeaderSlice.length+boundarySlice.length+4))
+                    bodyBuffer = Buffer.concat(body)
+
+                    const boundaryPrefix = '--'
+                    const CRLF = '\r\n'
+                    const boundaryToken = boundaryPrefix + boundaryStr
                     
-                    console.log(jsonBodySlice.toString())
+                    let cursor = 0
 
-                    response.setHeader('Content-Type', 'text/utf8');
-                    response.setHeader('X-Powered-By', 'bacon');
-                    response.write(boundarySlice.toString())
-                    response.write(jsonHeaderSlice.toString())
-                    response.write(jsonBodySlice.toString())
+                    const boundarySlice = bodyBuffer.slice(cursor, boundaryToken.length)
+
+                    /** Assertion */
+                    assert.strictEqual(boundarySlice.toString(), boundaryToken, "Boundary token found was not as expected")
+
+                    cursor += boundaryToken.length + CRLF.length
+
+                    const jsonPartHeaderCRLF_Index = bodyBuffer.indexOf('\r\n', cursor)
+                    if (jsonPartHeaderCRLF_Index !== -1) {
+
+                        const jsonPartHeader = bodyBuffer.slice(cursor, jsonPartHeaderCRLF_Index)
+                        console.log("JSON part header: ", jsonPartHeader.toString())
+
+                        cursor += jsonPartHeader.length + CRLF.length*2
+
+                        const jsonPartCRLF_Index = bodyBuffer.indexOf('\r\n', cursor)
+                        if (jsonPartCRLF_Index !== -1) {
+
+                            const jsonBody = bodyBuffer.slice(cursor, jsonPartCRLF_Index) 
+                            console.log("JSON body part: ", jsonBody.toString()) 
+
+                            fs.writeFile('./uploads/input.json', jsonBody, (err) => {
+                                if (err) throw err;
+                            })
+
+                            cursor += jsonBody.length + CRLF.length
+
+                            const imagePartHeaderCRLF_Index = bodyBuffer.indexOf('\r\n', cursor)
+                            
+                            response.setHeader('Content-Type', 'text/utf8');
+                            response.setHeader('X-Powered-By', 'bacon');
+
+                            response.write(jsonBody.toString())
+                        }
+                    }
                 }            
             }
             response.end()
