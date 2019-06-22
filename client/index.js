@@ -17,17 +17,17 @@ const imagePartParams = {
 }
 
 const postDataArray = [
-    Buffer.from('------------MyEntityBoundary-1\r\n'), 
+    Buffer.from('--' + boundaryStr + '\r\n'), 
     Buffer.from(JSON.stringify(jsonPartParams)), 
     Buffer.from('\r\n\r\n'),
     Buffer.from(jsonFile),
     Buffer.from('\r\n'),
-    Buffer.from('------------MyEntityBoundary-1\r\n'),
+    Buffer.from('--' + boundaryStr + '\r\n'),
     Buffer.from(JSON.stringify(imagePartParams)),
     Buffer.from('\r\n\r\n'),
     imageFile,
     Buffer.from('\r\n'),
-    Buffer.from('------------MyEntityBoundary-1--\r\n')
+    Buffer.from('--' + boundaryStr + '--\r\n')
 ]
 
 const postData = Buffer.concat(postDataArray)
