@@ -9,8 +9,11 @@
   "keywords": [],
   "author": "Richard Wheatley",
   "license": "ISC",
-  "repository": {"git@github.com": "dickyw71/file-ingest-server.git"},
+  "repository": {
+    "git@github.com": "dickyw71/file-ingest-server.git"
+  },
   "dependencies": {
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "uuid": "^3.3.2"
   }
 }
