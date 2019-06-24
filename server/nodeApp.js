@@ -50,8 +50,8 @@ http.createServer((request, response) => {
                 const boundaryField = "boundary=\""
                 const boundaryFieldIndex = headers["content-type"].indexOf(boundaryField)
                 if (boundaryFieldIndex !== -1) {
-                    const doubleQuote = "\""
-                    const boundaryStr = headers["content-type"].slice(boundaryFieldIndex + boundaryField.length, headers["content-type"].length - doubleQuote.length)
+                    const escapedQuote = "\""
+                    const boundaryStr = headers["content-type"].slice(boundaryFieldIndex + boundaryField.length, headers["content-type"].length - escapedQuote.length)
                     console.log("Boundary: ", boundaryStr)
 
                     bodyBuffer = Buffer.concat(body)
@@ -62,43 +62,10 @@ http.createServer((request, response) => {
                     let cursor = 0
                     const boundarySlice = bodyBuffer.slice(cursor, boundaryToken.length)
 
-                    /** Assertion */
+                    /** Assertion - if it failed program exits immediately */
                     assert.strictEqual(boundarySlice.toString(), boundaryToken, "Boundary token found was not as expected")
 
                     const CRLF = '\r\n'
-
-                    // Re-defined the Buffer iterator
-                    bodyBuffer[Symbol.iterator] = function() {
-                        return {               
-                            next: function() {               
-                                if (this._first) {
-                                    this._first = false
-                                    this._index = bodyBuffer.indexOf(boundaryToken)
-                                    if (this._index === -1) 
-                                        return { done: true }
-                                    return { 
-                                        value: this._index, 
-                                        done: false 
-                                    }
-                                } else {    
-                                    this._index = bodyBuffer.indexOf(boundaryToken, this._index+boundaryToken.length)                           
-                                    if ( this._index === -1) {
-                                         return { done: true }
-                                    } else {
-                                        return { 
-                                            value: this._index, 
-                                            done: false 
-                                        }
-                                    }
-                                }                              
-                            },
-                            _first: true,
-                            _index: -1
-                        }
-                    }
-
-                    boundaryIndices = [...bodyBuffer]   // Spread the values of the boundary indices
-                    console.log(boundaryIndices)
 
                     cursor += boundaryToken.length + CRLF.length
                     const jsonPartHeaderCRLF_Index = bodyBuffer.indexOf(CRLF, cursor)
@@ -112,28 +79,52 @@ http.createServer((request, response) => {
                         const jsonPartCRLF_Index = bodyBuffer.indexOf(CRLF, cursor)
                         if (jsonPartCRLF_Index !== -1) {
 
-                            const jsonBody = bodyBuffer.slice(cursor, jsonPartCRLF_Index) 
-                            console.log("JSON body part: ", jsonBody.toString()) 
+                            const jsonPart = bodyBuffer.slice(cursor, jsonPartCRLF_Index) 
+                            console.log("JSON part length: ", jsonPart.length)
+                            console.log("JSON body part: ", jsonPart.toString()) 
 
-                            let fileMetadata = JSON.parse(jsonBody)
-                            fileMetadata.uuid = uuidv1()
-
-                            fs.writeFile('./uploads/input.json', JSON.stringify(fileMetadata, null, 2), 'utf8', (err) => {
-                                if (err) throw err;
-                            })
-
-                            cursor += jsonBody.length + CRLF.length
+                            cursor += jsonPart.length + CRLF.length + boundaryToken.length + CRLF.length
                             const imagePartHeaderCRLF_Index = bodyBuffer.indexOf(CRLF, cursor)
                             if (imagePartHeaderCRLF_Index !== -1) {
                                 
                                 const imagePartHeader = bodyBuffer.slice(cursor, imagePartHeaderCRLF_Index)
-                                console.log(imagePartHeader.toString())
-                            }
-                            
-                            response.setHeader('Content-Type', 'application/json');
-                            response.setHeader('X-Powered-By', 'bacon');
+                                console.log("Image part header: ", imagePartHeader.toString())
 
-                            response.write(JSON.stringify(fileMetadata, null, 2))
+                                const filenameParam = "filename=\""
+                                const fileName_Index = imagePartHeader.indexOf(filenameParam)
+                                if (fileName_Index !== -1) {
+                                    const originalFileName = imagePartHeader.slice(fileName_Index+filenameParam.length, imagePartHeader.length - escapedQuote.length).toString()
+                                    console.log("Image part filename: ", originalFileName)
+
+                                    cursor += imagePartHeader.length + CRLF.length*2
+                                    const imagePartCRLF_Index = bodyBuffer.indexOf(CRLF, cursor)
+                                    if (imagePartCRLF_Index !== -1) {
+                                        const imagePartData = bodyBuffer.slice(cursor, imagePartCRLF_Index)
+                                        console.log(imagePartData.length)
+
+                                        let fileMetadata = JSON.parse(jsonPart)
+                                        fileMetadata.uuid = uuidv1()
+                                        fileMetadata.jsonFilename = "input.json"
+                                        fileMetadata.contentFile = {
+                                            uuid: uuidv1(),
+                                            originalFilename: originalFileName
+                                        }
+             
+                                        fs.writeFile('./uploads/input.json', JSON.stringify(fileMetadata, null, 2), 'utf8', (err) => {
+                                            if (err) throw err
+                                        })
+            
+                                        fs.writeFile(`./uploads/${fileMetadata.contentFile.uuid}.jpeg`, imagePartData, (err) => {
+                                            if (err) throw err
+                                        })
+
+                                        response.setHeader('Content-Type', 'application/json');
+                                        response.setHeader('X-Powered-By', 'bacon');
+
+                                        response.write(JSON.stringify(fileMetadata, null, 2))
+                                    }
+                                }
+                            }
 
                         }
                     }
