@@ -67,29 +67,23 @@ http.createServer((request, response) => {
 
                     const CRLF = '\r\n'
 
-                    // Re-defined Buffer iterator
+                    // Re-defined the Buffer iterator
                     bodyBuffer[Symbol.iterator] = function() {
                         return {               
                             next: function() {               
                                 if (this._first) {
                                     this._first = false
-                                    this._index = bodyBuffer.indexOf(boundaryToken+CRLF)
+                                    this._index = bodyBuffer.indexOf(boundaryToken)
                                     if (this._index === -1) 
                                         return { done: true }
                                     return { 
-                                        value: bodyBuffer.indexOf(boundaryToken+CRLF), 
+                                        value: this._index, 
                                         done: false 
                                     }
                                 } else {    
-                                    this._index = bodyBuffer.indexOf(boundaryToken+CRLF, this._index+boundaryToken.length+CRLF.length)                           
+                                    this._index = bodyBuffer.indexOf(boundaryToken, this._index+boundaryToken.length)                           
                                     if ( this._index === -1) {
-                                        this._lastIndex = bodyBuffer.lastIndexOf(boundaryToken + boundaryHyphens + CRLF)
-                                        if ( this._lastIndex === -1)  
-                                            return { done: true }
-                                        return { 
-                                            value: this._lastIndex, 
-                                            done: true 
-                                        }
+                                         return { done: true }
                                     } else {
                                         return { 
                                             value: this._index, 
@@ -99,8 +93,7 @@ http.createServer((request, response) => {
                                 }                              
                             },
                             _first: true,
-                            _index: 0,
-                            _lastIndex: 0
+                            _index: -1
                         }
                     }
 
