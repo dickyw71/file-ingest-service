@@ -5,25 +5,25 @@ const jsonFile = fs.readFileSync("../ingest/input.json", "utf8")
 const imageFile = fs.readFileSync("../ingest/profile_pic.jpeg")
 
 const boundaryStr = '----------MyEntityBoundary-1'
-const jsonPartParams = {
-    'Content-Type': 'application/json',
-    'Content-Length': Buffer.byteLength(jsonFile),
-    'Content-Disposition': `form-data; name="jsonFile"; filename="input.json"`
-}
-const imagePartParams = {
-    'Content-Type': 'image/jpeg',
-    'Content-Length': imageFile.length,
-    'Content-Disposition': `form-data; name="imageFile"; filename="profile_pic.jpeg"`
-}
+
+const jsonPartContentParams = 
+    `'Content-Type': 'application/json' \
+    'Content-Length': ${Buffer.byteLength(jsonFile)} \
+    'Content-Disposition': form-data; name="jsonFile"; filename="input.json"`
+
+const imagePartContentParams = 
+        `'Content-Type': 'image/jpeg' \
+        'Content-Length': ${imageFile.length} \
+        'Content-Disposition': form-data; name="imageFile"; filename="profile_pic.jpeg"`
 
 const postDataArray = [
     Buffer.from('--' + boundaryStr + '\r\n'), 
-    Buffer.from(JSON.stringify(jsonPartParams)), 
+    Buffer.from(jsonPartContentParams), 
     Buffer.from('\r\n\r\n'),
     Buffer.from(jsonFile),
     Buffer.from('\r\n'),
     Buffer.from('--' + boundaryStr + '\r\n'),
-    Buffer.from(JSON.stringify(imagePartParams)),
+    Buffer.from(imagePartContentParams),
     Buffer.from('\r\n\r\n'),
     imageFile,
     Buffer.from('\r\n'),
