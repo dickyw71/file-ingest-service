@@ -7,14 +7,14 @@ const imageFile = fs.readFileSync("../ingest/profile_pic.jpeg")
 const boundaryStr = '----------MyEntityBoundary-1'
 
 const jsonPartContentParams = 
-    `'Content-Type': 'application/json' \
-    'Content-Length': ${Buffer.byteLength(jsonFile)} \
+    `'Content-Type': 'application/json'
+    'Content-Length': ${Buffer.byteLength(jsonFile)}
     'Content-Disposition': form-data; name="jsonFile"; filename="input.json"`
 
 const imagePartContentParams = 
-        `'Content-Type': 'image/jpeg' \
-        'Content-Length': ${imageFile.length} \
-        'Content-Disposition': form-data; name="imageFile"; filename="profile_pic.jpeg"`
+      `'Content-Type': 'image/jpeg'
+      'Content-Length': ${imageFile.length}
+      'Content-Disposition': form-data; name="imageFile"; filename="profile_pic.jpeg"`
 
 const postDataArray = [
     Buffer.from('--' + boundaryStr + '\r\n'), 
