@@ -1,5 +1,9 @@
 {
     "name": "Richard",
     "age": "47",
-    "height": "5 feet 6 inches"
+    "height": "5 feet 6 inches",
+    "contentFile": {
+        "filename": "profile_pic.jpeg",
+        "size": 43064
+    }
 }
