@@ -46,19 +46,34 @@ http.createServer((request, response) => {
                 // find the multipart boundary string
                 const boundaryStr = parseBoundaryString(headers["content-type"])
 
-                // parse out each body-part into array of body part Buffers
+                // parse out each body-part into an array of Buffers
                 bodyBuffer = Buffer.concat(body)
                 const bodyPartsArr = parseBodyParts(bodyBuffer, boundaryStr)
 
                 console.log(bodyPartsArr)
                 
+                let bodyHeadersArr = []
+                let contentsArr = []
                 // for each body part
-                    // parse out the part content headers
-                    // parse out the part content
-
-                console.log("Boundary: ", boundaryStr)
-
+                for (const b of bodyPartsArr) {
+                    // parse out the headers into an array of Buffers
+                    bodyHeadersArr.push(parsePartHeaders(b))
+                    // parse out content into an array of Buffers
+                    contentsArr.push(parsePartContents(b))
+                }
                 
+                console.log("Body header buffers: ", bodyHeadersArr[0], "\r\n",  bodyHeadersArr[1])
+
+                // map each headers buffer to headers object with key/value pairs for each header
+                 //  split string into an array of lines  
+                
+            
+                let headersStrArr = bodyHeadersArr.map((buff) => new String(buff.toString()).split('\n'))                       
+                        .map((hdr) => hdr.map((line) => line.trim().replace(/\'/g, "").split(':')))   // trim white space and split header line into a key/value pair                                
+                
+                console.log(headersStrArr)
+
+
 
                 const boundaryHyphens = '--'
                 const boundaryToken = boundaryHyphens + boundaryStr
@@ -154,27 +169,56 @@ function parseBoundaryString(contentTypeStr) {
 
 function parseBodyParts(buffer, seperatorStr) {
 
-    _bodyParts = []
+    let _bodyParts = []
 
     const hyphen = '-'
     const boundaryToken = hyphen + hyphen + seperatorStr
 
-    // find start and end index of body part
+    // find start and end index of each body part
     const startIndex = buffer.indexOf(boundaryToken)
     if (startIndex !== -1) {
-        const cursor = boundaryToken.length
+        let cursor = boundaryToken.length
         const nextIndex = buffer.indexOf(boundaryToken, cursor)
         if (nextIndex !== -1) {
-            _bodyParts.push(buffer.slice(startIndex + boundaryToken.length, nextIndex - hyphen.length))
+            _bodyParts.push(buffer.slice(startIndex + boundaryToken.length, nextIndex))
             
             cursor = nextIndex + boundaryToken.length
             const endIndex = buffer.indexOf(boundaryToken, cursor)
             if(endIndex !== -1) {
-                _bodyParts.push(buffer.slice(nextIndex + boundaryToken.length, endIndex - hyphen.length))
+                _bodyParts.push(buffer.slice(cursor, endIndex))
             }
         }
     }
 
     return _bodyParts
+}
 
+function parsePartHeaders(bodyPartBuffer) {
+
+    let _retBuff = null
+    const CRLF = "\r\n"
+    // each body part headers section starts with a single CRLF and ends with a double CRLF
+    const intialCRLF_Index = bodyPartBuffer.indexOf(CRLF)
+    if (intialCRLF_Index !== -1) {
+        const closingCRLFPair_Index = bodyPartBuffer.indexOf(CRLF+CRLF)
+        if (closingCRLFPair_Index !== -1) {
+            _retBuff = bodyPartBuffer.slice(intialCRLF_Index+CRLF.length, closingCRLFPair_Index)
+        }
+    }
+    return _retBuff
+}
+
+function parsePartContents(bodyPartBuffer) {
+
+    let _retBuff = null
+    const CRLF = "\r\n"
+    // each body part contents section starts with a double CRLF and ends with a single CRLF
+    const intialCRLFPair_Index = bodyPartBuffer.indexOf(CRLF+CRLF)
+    if (intialCRLFPair_Index !== -1) {
+        const closingCRLF_Index = bodyPartBuffer.indexOf(CRLF)
+        if (closingCRLF_Index !== -1) {
+            _retBuff = bodyPartBuffer.slice(intialCRLFPair_Index + (CRLF+CRLF).length, closingCRLF_Index)
+        }
+    }
+    return _retBuff   
 }
