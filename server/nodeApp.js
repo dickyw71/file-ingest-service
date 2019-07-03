@@ -22,7 +22,6 @@ http.createServer((request, response) => {
 
                     response.statusCode = 201
                     response.setHeader('Content-Type', 'application/json');
-                    response.setHeader('X-Powered-By', 'bacon');
         
                     response.write(body)
                     response.end()
@@ -36,7 +35,6 @@ http.createServer((request, response) => {
 
                     response.statusCode = 201
                     response.setHeader('Content-Type', 'image/jpeg');
-                    response.setHeader('X-Powered-By', 'bacon');
         
                     response.write(body)
                     response.end()
@@ -69,9 +67,14 @@ http.createServer((request, response) => {
                 
             
                 let headersStrArr = bodyHeadersArr.map((buff) => new String(buff.toString()).split('\n'))                       
-                        .map((hdr) => hdr.map((line) => line.trim().replace(/\'/g, "").split(':')))   // trim white space and split header line into a key/value pair                                
+                        .map((hdr) => hdr.map((line) => line.trim().replace(/\'/g, "").split(': ')))   // trim white space and split header line into a key/value pair                                
                 
-                console.log(headersStrArr)
+                let jsonPartHdr = {}
+                jsonPartHdr[headersStrArr[0][0][0]] = headersStrArr[0][0][1]
+                jsonPartHdr[headersStrArr[0][1][0]] = headersStrArr[0][1][1]
+                jsonPartHdr[headersStrArr[0][2][0]] = headersStrArr[0][2][1]
+
+                console.log(jsonPartHdr['Content-Length'])
 
 
 
@@ -138,8 +141,7 @@ http.createServer((request, response) => {
                                         if (err) throw err
                                     })
 
-                                    response.setHeader('Content-Type', 'application/json');
-                                    response.setHeader('X-Powered-By', 'bacon');
+                                    response.setHeader('Content-Type', 'application/json');    
 
                                     response.write(JSON.stringify(fileMetadata, null, 2))
                                 }
