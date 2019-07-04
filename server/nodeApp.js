@@ -57,25 +57,24 @@ http.createServer((request, response) => {
                     // parse out the headers into an array of Buffers
                     bodyHeadersArr.push(parsePartHeaders(b))
                     // parse out content into an array of Buffers
-                    contentsArr.push(parsePartContents(b))
+                    contentsArr.push(new Buffer(parsePartContents(b)))
                 }
                 
-                console.log("Body header buffers: ", bodyHeadersArr[0], "\r\n",  bodyHeadersArr[1])
 
                 // map each headers buffer to headers object with key/value pairs for each header
-                 //  split string into an array of lines  
-                
-            
+                 //  split string into an array of lines             
                 let headersStrArr = bodyHeadersArr.map((buff) => new String(buff.toString()).split('\n'))                       
                         .map((hdr) => hdr.map((line) => line.trim().replace(/\'/g, "").split(': ')))   // trim white space and split header line into a key/value pair                                
                 
+                // Convert header arrays into objects
                 let jsonPartHdr = {}
+                let imagePartHdr = {}
                 jsonPartHdr[headersStrArr[0][0][0]] = headersStrArr[0][0][1]
-                jsonPartHdr[headersStrArr[0][1][0]] = headersStrArr[0][1][1]
+                jsonPartHdr[headersStrArr[0][1][0]] = parseInt(headersStrArr[0][1][1])
                 jsonPartHdr[headersStrArr[0][2][0]] = headersStrArr[0][2][1]
-
-                console.log(jsonPartHdr['Content-Length'])
-
+                imagePartHdr[headersStrArr[1][0][0]] = headersStrArr[1][0][1]
+                imagePartHdr[headersStrArr[1][1][0]] = parseInt(headersStrArr[1][1][1])
+                imagePartHdr[headersStrArr[1][2][0]] = headersStrArr[1][2][1]
 
 
                 const boundaryHyphens = '--'
